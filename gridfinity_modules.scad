@@ -9,7 +9,7 @@ sharp_corners = 0;
 
 // basic block with cutout in top to be stackable, optional holes in bottom
 // start with this and begin 'carving'
-module grid_block(num_x=1, num_y=1, num_z=2, magnet_diameter=6.5, screw_depth=6, center=false, hole_overhang_remedy=false, half_pitch=false, box_corner_attachments_only = false) {
+module grid_block(num_x=1, num_y=1, num_z=2, magnet_diameter=6.5, screw_depth=6, center=false, hole_overhang_remedy=false, half_pitch=false, box_corner_attachments_only = false, block_height = -1) {
   corner_radius = 3.75;
   outer_size = gridfinity_pitch - gridfinity_clearance;  // typically 41.5
   block_corner_position = outer_size/2 - corner_radius;  // need not match center of pad corners
@@ -46,10 +46,19 @@ module grid_block(num_x=1, num_y=1, num_z=2, magnet_diameter=6.5, screw_depth=6,
     }
     
     // remove top so XxY can fit on top
+    if (block_height < num_z)
       color("blue") 
-      translate([0, 0, gridfinity_zpitch*num_z]) 
+      translate([0, 0, gridfinity_zpitch*num_z])
       pad_oversize(num_x, num_y, 1);
     
+    // cut down the inside floor
+    if (block_height < num_z - 1)
+        color("blue")
+        translate([0,0, gridfinity_zpitch*block_height])
+        hull()
+        cornercopy(block_corner_position, num_x, num_y)
+        cylinder(r=corner_radius-0.95, h=gridfinity_zpitch*(num_z-block_height)+0.2, $fn=32);
+
     if (esd > 0) {  // add pockets for screws if requested
       gridcopycorners(ceil(num_x), ceil(num_y), magnet_position, box_corner_attachments_only)
       translate([0, 0, -0.1]) cylinder(d=screw_hole_diam, h=esd+0.1, $fn=28);
